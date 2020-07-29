@@ -3194,4 +3194,27 @@ class PDF {
 
         return (int)count($lines) * $lineHeight;
     }
+
+    /**
+     * Change the number of the current page
+     */
+    public function setPage(int $page) {
+		$this->int_page = $page;
+
+		return $this;
+    }
+
+    /**
+     * Get page array
+     */
+    public function getPageArray(): array {
+        return $this->arr_pages;
+    }
+
+    /**
+     * Get page count
+     */
+    public function getPageCount(): int {
+        return (int)count($this->arr_pages);
+    }
 }
