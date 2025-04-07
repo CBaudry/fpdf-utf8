@@ -8,7 +8,7 @@
  * @copyright FaimMedia B.V. 2017
  */
 
-use FaimMedia\FPDF\PDFBarcode;
+use CS\FPDF\PDFBarcode;
 
 define('ROOT_PATH', realpath(__DIR__.'/..').'/');
 

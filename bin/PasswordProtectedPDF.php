@@ -8,8 +8,8 @@
  * @copyright FaimMedia B.V. 2018
  */
 
-use FaimMedia\FPDF\PDF,
-    FaimMedia\FPDF\ProtectedPDF;
+use CS\FPDF\PDF,
+    CS\FPDF\ProtectedPDF;
 
 define('ROOT_PATH', realpath(__DIR__.'/..').'/');
 
