@@ -57,4 +57,13 @@ class FPDFException extends Exception {
 // Color profile path is invalid or not readable
 	const INVALID_COLOR_PROFILE_PATH = -17;
 
+// Attachment path is invalid or not readable
+	const ATTACHMENT_INVALID_PATH = -18;
+
+// Output path is invalid or not readable
+	const OUTPUT_INVALID_PATH = -19;
+
+// Output destination type is not valid
+	const OUTPUT_INVALID_DESTINATION = -20;
+
 }

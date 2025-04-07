@@ -6,7 +6,7 @@ use CS\FpdfBundle\Exception\FPDFException;
 
 /**
  * Class PDF
- * @package tFPDF
+ * @package csFPDF
  */
 class PDF {
 
@@ -22,6 +22,20 @@ class PDF {
 
     const FILE_FONT_METRICS = 'fm-';
     const FILE_CHARACTER_WIDTH = 'cw-';
+
+    /**
+     * Version number
+     *
+     * @var string
+     */
+    protected $version = '1.0';
+
+    /**
+     * PDS's unique ID
+     *
+     * @var string
+     */
+    protected string $str_id = '';
 
     /**
      * @var bool
@@ -480,6 +494,33 @@ class PDF {
 	 * @var int
 	 */
 	protected int $int_color_profile_desc;
+	
+	/**
+	 * Microtime of the moment the "EndDoc" function is called
+	 * 
+	 * @var int
+	 */
+    protected int $int_creation_date;
+	
+	/**
+	 * 
+	 * @var array
+	 */
+	protected array $metadata_list = [];
+	
+	/**
+	 * Metadata object number
+	 * 
+	 * @var int
+	 */
+    protected int $int_metadata;
+	
+	/**
+	 * String of the XMP file
+	 * 
+	 * @var string|null
+	 */
+    protected ?string $str_xmp = null;
 
     /**
      * PDF constructor.
@@ -488,7 +529,8 @@ class PDF {
      * @param string $str_size
      */
     public function __construct($str_orientation = 'P', $str_units = 'mm', $str_size = 'A4') {
-
+		$this->str_id = uniqid();
+		
         $this->setFontPath(__DIR__ . '/font/unifont/');
         $this->setColorProfilePath(__DIR__ . '/color_profile/sRGB2014.icc');
 
@@ -556,6 +598,9 @@ class PDF {
 
     // Enable compression
         $this->SetCompression(true);
+
+    // Used both as metadata and XMP data
+		$this->metadata_list["Producer"] = 'csFPDF ' . $this->version;
 
     }
 
@@ -1958,8 +2003,9 @@ class PDF {
 			case 'F':
 				// Save to local file
 				$f = fopen($name,'wb');
-				if(!$f)
-					$this->Error('Unable to create output file: '.$name);
+				if(!$f){
+					throw new FPDFException('Unable to create output file `'.$name.'`', FPDFException::OUTPUT_INVALID_PATH);
+				}
 				fwrite($f,$this->str_buffer,strlen($this->str_buffer));
 				fclose($f);
 				break;
@@ -1967,7 +2013,7 @@ class PDF {
 				// Return as a string
 				return $this->str_buffer;
 			default:
-				$this->Error('Incorrect output destination: '.$dest);
+				throw new FPDFException('Unable to create output file `'.$name.'`', FPDFException::OUTPUT_INVALID_DESTINATION);
 		}
 		return '';
 	}
@@ -3041,6 +3087,7 @@ class PDF {
 		if($this->str_color_profile_path){
 			$this->PutColorProfile();
 		}
+        $this->PutXMP();
     }
 
     /**
@@ -3048,8 +3095,12 @@ class PDF {
      */
     public function PutInfo()
     {
-        $this->Out('/Producer ' . $this->TextString('tFPDF ' . $this->str_pdf_version));
-        if (!empty($this->str_title)) {
+		foreach($this->metadata_list as $k => $v){
+            $this->Out('/'.$k.' '.$this->TextString($v));
+		}
+		
+//		$this->Out('/Producer ' . $this->TextString('csFPDF ' . $this->version));
+		if (!empty($this->str_title)) {
             $this->Out('/Title ' . $this->TextString($this->str_title));
         }
         if (!empty($this->str_subject)) {
@@ -3064,7 +3115,7 @@ class PDF {
         if (!empty($this->str_creator)) {
             $this->Out('/Creator ' . $this->TextString($this->str_creator));
         }
-        $this->Out('/CreationDate ' . $this->TextString('D:' . @date('YmdHis')));
+        $this->Out('/CreationDate ' . $this->TextString('D:' . @date('YmdHis', $this->int_creation_date)));
     }
 
     /**
@@ -3106,6 +3157,7 @@ class PDF {
 		if($this->str_color_profile_path){
 			$this->Out('/OutputIntents [ '.$this->int_color_profile_desc.'  0 R ]');
 		}
+        $this->Out('/Metadata '.$this->int_metadata.' 0 R');
     }
 	
 	function PutFiles()
@@ -3132,7 +3184,7 @@ class PDF {
 			if($fc === false){
 				$fc = file_get_contents($file);
 				if($fc===false){
-					$this->Error('Cannot open file: '.$file);
+					throw new FPDFException('Cannot open file `'.$file.'`', FPDFException::ATTACHMENT_INVALID_PATH);
 				}
 	            $__ft = filemtime($file);
 //				$__fs = filesize($file);
@@ -3215,7 +3267,7 @@ class PDF {
     {
         $icc = file_get_contents($this->str_color_profile_path);
 		if(!$icc){
-            $this->Error('Could not load the ICC profile');
+			throw new FPDFException('Could not load the color profile `'.$this->str_color_profile_path.'`', FPDFException::INVALID_COLOR_PROFILE_PATH);
 		}
 		$icc_name = basename($this->str_color_profile_path);
 		
@@ -3243,6 +3295,93 @@ class PDF {
         $this->Out('endobj');
     }
 
+    function PutXMP()
+    {
+		if($this->b_isOut_metadata){
+			return;
+		}
+		if ($this->int_state == self::DOCUMENT_STATE_NOT_INITIALIZED) {
+            $this->Open();
+        }
+		
+		$this->b_isOut_metadata = true;
+		if($this->str_xmp){
+			
+//			$s = (is_string($this->str_xmp)?$this->str_xmp:$this->str_xmp->saveXML());
+//			$s = str_ireplace('<?xml version="1.0"? >', '', $s);
+			$s = str_ireplace('<?xml version="1.0"?>', '', $this->str_xmp);
+			
+			
+			$size = strlen($s);
+			if($this->bol_compress){
+				$s = gzcompress($s);
+				$size = strlen($s);
+			}
+			
+			$this->NewObject();
+			$this->int_metadata = $this->int_current_object;
+			$this->Out('<<');
+			if($this->bol_compress){
+	            $this->Out('/Filter /FlateDecode');
+			}
+			$this->Out('/Type /Metadata');
+			$this->Out('/Subtype /XML');
+			$this->Out('/Length '.$size);
+			$this->Out('>>');
+			$this->PutStream($s);
+			$this->Out('endobj');
+			
+			return;
+		}
+        $pdf = $this->GetXmpSimple('pdf:Producer', $this->metadata_list['Producer']);
+		if($this->str_keywords){
+            $pdf .= $this->GetXmpSimple('pdf:Keywords', $this->str_keywords);
+		}
+
+        $date = @date('c', $this->int_creation_date);
+        $xmp = $this->GetXmpSimple('xmp:CreateDate', $date);
+		if($this->str_creator){
+            $xmp .= $this->GetXmpSimple('xmp:CreatorTool', $this->str_creator);
+		}
+
+        $dc = '';
+		if($this->str_author){
+            $dc .= $this->GetXmpSeq('dc:creator', $this->str_author);
+		}
+		if($this->str_title){
+            $dc .= $this->GetXmpAlt('dc:title', $this->str_title);
+		}
+		if($this->str_subject){
+            $dc .= $this->GetXmpAlt('dc:description', $this->str_subject);
+		}
+
+//        $pdfaid = $this->GetXmpSimple('pdfaid:part', '1');
+//        $pdfaid .= $this->GetXmpSimple('pdfaid:conformance', 'B');
+        $pdfaid = $this->GetXmpSimple('pdfaid:part', '3');
+        $pdfaid .= $this->GetXmpSimple('pdfaid:conformance', 'B');
+
+        $s = '<?xpacket begin="" id="W5M0MpCehiHzreSzNTczkc9d"?>'."\n";
+        $s .= '<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">'."\n";
+        $s .= $this->GetXmpDescription('pdf', 'http://ns.adobe.com/pdf/1.3/', $pdf);
+        $s .= $this->GetXmpDescription('xmp', 'http://ns.adobe.com/xap/1.0/', $xmp);
+		if($dc){
+            $s .= $this->GetXmpDescription('dc', 'http://purl.org/dc/elements/1.1/', $dc);
+		}
+        $s .= $this->GetXmpDescription('pdfaid', 'http://www.aiim.org/pdfa/ns/id/', $pdfaid);
+        $s .= '</rdf:RDF>'."\n";
+        $s .= '<?xpacket end="r"?>';
+
+        $this->NewObject();
+        $this->int_metadata = $this->int_current_object;
+        $this->Out('<<');
+        $this->Out('/Type /Metadata');
+        $this->Out('/Subtype /XML');
+        $this->Out('/Length '.strlen($s));
+        $this->Out('>>');
+        $this->PutStream($s);
+        $this->Out('endobj');
+    }
+
     /**
      *
      */
@@ -3261,6 +3400,7 @@ class PDF {
         $this->Out('/Size ' . ($this->int_current_object + 1));
         $this->Out('/Root ' . $this->int_current_object . ' 0 R');
         $this->Out('/Info ' . ($this->int_current_object - 1) . ' 0 R');
+        $this->Out('/ID [(' . $this->str_id . ')(' . $this->str_id . ')]');
     }
 
     /**
@@ -3268,6 +3408,8 @@ class PDF {
      */
     public function EndDoc()
     {
+        $this->int_creation_date = time();
+		
         $this->PutHeader();
         $this->PutPages();
         $this->PutResources();
@@ -3544,5 +3686,31 @@ class PDF {
     protected function getColorProfilePath()
     {
         return realpath($this->str_color_profile_path).'/';
+    }
+	
+	//** ***************************** **
+	//** ****** PDF/A FUNCTIONS ****** **
+	//** ***************************** **
+	function GetXmpDescription($alias, $ns, $body)
+    {
+        return sprintf("\t<rdf:Description rdf:about=\"\" xmlns:%s=\"%s\">\n%s\t</rdf:Description>\n", $alias, $ns, $body);
+    }
+
+    function GetXmpSimple($tag, $value)
+    {
+        $value = htmlspecialchars($value, ENT_XML1, 'UTF-8');
+        return sprintf("\t\t<%s>%s</%s>\n", $tag, $value, $tag);
+    }
+
+    function GetXmpSeq($tag, $value)
+    {
+        $value = htmlspecialchars($value, ENT_XML1, 'UTF-8');
+        return sprintf("\t\t<%s>\n\t\t\t<rdf:Seq>\n\t\t\t\t<rdf:li>%s</rdf:li>\n\t\t\t</rdf:Seq>\n\t\t</%s>\n", $tag, $value, $tag);
+    }
+
+    function GetXmpAlt($tag, $value)
+    {
+        $value = htmlspecialchars($value, ENT_XML1, 'UTF-8');
+        return sprintf("\t\t<%s>\n\t\t\t<rdf:Alt>\n\t\t\t\t<rdf:li xml:lang=\"x-default\">%s</rdf:li>\n\t\t\t</rdf:Alt>\n\t\t</%s>\n", $tag, $value, $tag);
     }
 }
