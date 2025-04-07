@@ -803,7 +803,7 @@ class PDF {
     /**
      *
      */
-    public function Header($o = [])
+    public function Header()
     {
         // To be implemented in your own inherited class
     }
@@ -811,7 +811,7 @@ class PDF {
     /**
      *
      */
-    public function Footer($o = [])
+    public function Footer()
     {
         // To be implemented in your own inherited class
     }
