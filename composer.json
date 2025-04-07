@@ -7,6 +7,24 @@
 	"license": "LGPL-3.0-or-later",
 	"authors": [
 		{
+			"name": "David Wilcock",
+			"email": "dwilcock@doc-net.com"
+		},
+		{
+			"name": "Dave Blencowe",
+			"email": "dblencowe@gmail.com"
+		},
+		{
+			"name": "Ian Back",
+			"email": "ianb@bpm1.com"
+		},
+		{
+			"name": "Tim Peters",
+			"email": "info@faimmedia.nl",
+			"homepage": "https://faimmedia.nl",
+			"role": "Developer"
+		},
+		{
 			"name": "Baudry Charly",
 			"email": "cbaudry@chauss-service.fr",
 			"role": "Developer"
