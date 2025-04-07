@@ -521,6 +521,13 @@ class PDF {
 	 * @var string|null
 	 */
     protected ?string $str_xmp = null;
+	
+	/**
+	 * Used to prevent pushing XMP data twice
+	 * 
+	 * @var bool
+	 */
+	protected bool $b_xmp_out = false;
 
     /**
      * PDF constructor.
@@ -3224,7 +3231,7 @@ class PDF {
             $this->Out('>>');
 			$this->Out('/AFRelationship /'.$info['other']["relation"]);
 			
-            $this->Out('/UF '.$this->TextString(utf8_encode($name)));
+            $this->Out('/UF '.$this->TextString(mb_convert_encoding($name, "UTF-8", mb_detect_encoding($name))));
             $this->Out('>>');
             $this->Out('endobj');
 
@@ -3297,14 +3304,14 @@ class PDF {
 
     function PutXMP()
     {
-		if($this->b_isOut_metadata){
+		if($this->b_xmp_out){
 			return;
 		}
 		if ($this->int_state == self::DOCUMENT_STATE_NOT_INITIALIZED) {
             $this->Open();
         }
 		
-		$this->b_isOut_metadata = true;
+		$this->b_xmp_out = true;
 		if($this->str_xmp){
 			
 //			$s = (is_string($this->str_xmp)?$this->str_xmp:$this->str_xmp->saveXML());
@@ -3632,7 +3639,7 @@ class PDF {
 			}
         }
         if(!$isUTF8){
-            $desc = utf8_encode($desc);
+            $desc = mb_convert_encoding($desc, "UTF-8", mb_detect_encoding($desc));
 		}
         $this->file_list[] = ['file' => $file, 'name' => $name, 'desc' => $desc, "content" => false, "other" => $other];
     }
@@ -3650,8 +3657,8 @@ class PDF {
 			}
         }
         if(!$isUTF8){
-            $desc = utf8_encode($desc);
-            $content = utf8_encode($content);
+            $desc = mb_convert_encoding($desc, "UTF-8", mb_detect_encoding($desc));
+            $content = mb_convert_encoding($content, "UTF-8", mb_detect_encoding($content));
 		}
 		$tmpfile_path = tempnam(sys_get_temp_dir(), 'CS_FPDF_');
 		file_put_contents($tmpfile_path, $content);
