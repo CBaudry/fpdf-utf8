@@ -1,40 +1,27 @@
 {
-	"name": "faimmedia/fpdf-utf8",
+	"name": "CS/fpdf-utf8",
 	"description": "tfpdf",
 	"keywords": ["pdf", "utf-8", "fpdf"],
-	"homepage": "http://github.com/FaimMedia/tfpdf",
+	"homepage": "http://github.com/CBaudry/tfpdf",
 	"type": "library",
 	"license": "LGPL-3.0-or-later",
 	"authors": [
 		{
-			"name": "David Wilcock",
-			"email": "dwilcock@doc-net.com"
-		},
-		{
-			"name": "Dave Blencowe",
-			"email": "dblencowe@gmail.com"
-		},
-		{
-			"name": "Ian Back",
-			"email": "ianb@bpm1.com"
-		},
-		{
-			"name": "Tim Peters",
-			"email": "info@faimmedia.nl",
-			"homepage": "https://faimmedia.nl",
+			"name": "Baudry Charly",
+			"email": "cbaudry@chauss-service.fr",
 			"role": "Developer"
 		}
 	],
 	"autoload": {
 		"psr-4": {
-			"FaimMedia\\FPDF\\": "src/FPDF/"
+			"CS\\FPDF\\": "src/FPDF/"
 		}
 	},
 	"scripts": {
 		"test": "phpunit"
 	},
 	"require": {
-		"php": ">= 7.0",
+		"php": ">= 8.0",
 		"ext-mbstring": "*"
 	},
 	"require-dev": {
