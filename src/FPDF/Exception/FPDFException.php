@@ -54,4 +54,7 @@ class FPDFException extends Exception {
 // Stream could not be readed (completely)
 	const INVALID_STREAM = -16;
 
+// Color profile path is invalid or not readable
+	const INVALID_COLOR_PROFILE_PATH = -17;
+
 }

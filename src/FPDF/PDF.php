@@ -460,6 +460,26 @@ class PDF {
 	 */
     protected bool $file_open_attachment_pane = false;
 
+	/**
+	 * Path to the color profile
+	 * 
+	 * @var ?string
+	 */
+	protected ?string $str_color_profile_path = null;
+	
+	/**
+	 * Color profile object number
+	 * 
+	 * @var int
+	 */
+	protected int $int_color_profile;
+	
+	/**
+	 * Color profile's description object number
+	 * 
+	 * @var int
+	 */
+	protected int $int_color_profile_desc;
 
     /**
      * PDF constructor.
@@ -470,6 +490,7 @@ class PDF {
     public function __construct($str_orientation = 'P', $str_units = 'mm', $str_size = 'A4') {
 
         $this->setFontPath(__DIR__ . '/font/unifont/');
+        $this->setColorProfilePath(__DIR__ . '/color_profile/sRGB2014.icc');
 
         // Scale factor
         switch ($str_units) {
@@ -3017,6 +3038,9 @@ class PDF {
 		if(!empty($this->file_list)){
             $this->PutFiles();
 		}
+		if($this->str_color_profile_path){
+			$this->PutColorProfile();
+		}
     }
 
     /**
@@ -3078,6 +3102,9 @@ class PDF {
 		}
 		if($this->file_open_attachment_pane){
             $this->Out('/PageMode /UseAttachments');
+		}
+		if($this->str_color_profile_path){
+			$this->Out('/OutputIntents [ '.$this->int_color_profile_desc.'  0 R ]');
 		}
     }
 	
@@ -3180,6 +3207,39 @@ class PDF {
 		
 //        $this->Out('<<');
 		$this->Out('['.implode(' ',$b).']');
+        $this->Out('endobj');
+    }
+	
+	
+	protected function PutColorProfile()
+    {
+        $icc = file_get_contents($this->str_color_profile_path);
+		if(!$icc){
+            $this->Error('Could not load the ICC profile');
+		}
+		$icc_name = basename($this->str_color_profile_path);
+		
+        $this->NewObject();
+        $this->int_color_profile = $this->int_current_object;
+        $this->Out('<<');
+        $this->Out('/Length '.strlen($icc));
+        $this->Out('/N 3');
+        $this->Out('>>');
+        $this->PutStream($icc);
+        $this->Out('endobj');
+		
+		
+        $this->NewObject();
+        $this->int_color_profile_desc = $this->int_current_object;
+        $this->Out('<<');
+		
+		$this->Out('/DestOutputProfile '.$this->int_color_profile.' 0 R');
+        $this->Out('/OutputConditionIdentifier (' . $icc_name . ') /Info (' . $icc_name . ') /RegistryName ( http://www.color.org )');
+        $this->Out('/Type /OutputIntent');
+        $this->Out('/S /GTS_PDFA1');
+//        $this->Out('/Length '.strlen($icc));
+//        $this->Out('/N 3');
+        $this->Out('>>');
         $this->Out('endobj');
     }
 
@@ -3459,5 +3519,30 @@ class PDF {
 	
 	function file_OpenAttachmentPane(bool $bOpen = true){
         $this->file_open_attachment_pane = $bOpen;
+    }
+
+    /**
+     * Set the color profile path
+     *
+     * @param $colorProfilePath The color profile file path
+     */
+    public function setColorProfilePath(string $colorProfilePath): string {
+		$str_color_profile_path = realpath($colorProfilePath);
+        if(!file_exists($str_color_profile_path) || is_dir($str_color_profile_path)) {
+            throw new FPDFException('Color profile file does not exist `'.$str_color_profile_path.'`', FPDFException::INVALID_COLOR_PROFILE_PATH);
+        }
+
+//        $this->str_font_path = realpath($fontPath).'/';
+        $this->str_color_profile_path = $str_color_profile_path;
+
+        return $this->str_color_profile_path;
+    }
+
+    /**
+     * @return string
+     */
+    protected function getColorProfilePath()
+    {
+        return realpath($this->str_color_profile_path).'/';
     }
 }
