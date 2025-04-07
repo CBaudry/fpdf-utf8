@@ -430,7 +430,7 @@ class PDF {
      *
      * @var string
      */
-    protected $str_pdf_version = '1.3';
+    protected $str_pdf_version = '1.6';
 
     /**
      * The font metric cache directory, if null no cache will be used
@@ -438,6 +438,27 @@ class PDF {
      * @var string
      */
     protected $cachePath = null;
+	
+    /**
+     * Array of file attachments
+     *
+     * @var array
+     */
+	protected array $file_list = [];
+	
+	/**
+	 * Files object number
+	 * 
+	 * @var int
+	 */
+    protected int $file_index;
+	
+	/**
+	 * Ask the PDF viewer to automatically open the file attachment pane
+	 * 
+	 * @var bool
+	 */
+    protected bool $file_open_attachment_pane = false;
 
 
     /**
@@ -2431,7 +2452,7 @@ class PDF {
     /**
      * Puts the pages into the document
      */
-    private function PutPages()
+    protected function PutPages()
     {
         $int_page = $this->int_page;
         if (!empty($this->str_alias_number_pages)) {
@@ -2992,6 +3013,10 @@ class PDF {
         $this->PutResourceDict();
         $this->Out('>>');
         $this->Out('endobj');
+		
+		if(!empty($this->file_list)){
+            $this->PutFiles();
+		}
     }
 
     /**
@@ -3041,6 +3066,121 @@ class PDF {
         } elseif ($this->str_layout_mode == 'two') {
             $this->Out('/PageLayout /TwoColumnLeft');
         }
+		
+		if(!empty($this->file_list)){
+			$a = [];
+			foreach($this->file_list as $i => &$info){
+				$a[] = $info["n_name"].' '.$info["n"].' 0 R';
+			}
+			$this->Out('/AF '.$this->file_index.' 0 R');
+			$this->Out('/Names <</EmbeddedFiles <</Names ['.implode(' ',$a).']>>>>');
+			
+		}
+		if($this->file_open_attachment_pane){
+            $this->Out('/PageMode /UseAttachments');
+		}
+    }
+	
+	function PutFiles()
+    {
+//        $s = '';
+        foreach($this->file_list as $i => &$info)
+        {
+			
+			$info['other'] ??= [];
+			$info['other']["relation"] ??= "Unspecified";
+			$info['other']["subtype"] ??= "application/octet-stream";
+			
+            $file = $info['file'];
+            $name = $info['name'];
+            $desc = $info['desc'];
+//            $relation = ($info['other']["relation"]??"Unspecified");
+            $fc = $info['content'];
+			$info['n'] = $this->int_current_object + 1;
+			$info['n_name'] = '('.$this->EscapeString($name).')';
+			
+            $__ft = null;
+//			$__fs = null;
+			$checksum = false;
+			if($fc === false){
+				$fc = file_get_contents($file);
+				if($fc===false){
+					$this->Error('Cannot open file: '.$file);
+				}
+	            $__ft = filemtime($file);
+//				$__fs = filesize($file);
+				$checksum = md5_file($file);
+			}
+			if(!$__ft){
+				$__ft = null;
+			}
+			if(!$checksum){
+				$checksum = md5($fc);
+			}
+            $md = @date('YmdHis', $__ft);
+//            $md = @date('YmdHis', filetime($file));
+			
+			$size = strlen($fc);
+			$filesize = $size;
+			if($this->bol_compress){
+				$fc = gzcompress($fc);
+				$size = strlen($fc);
+			}
+//			if($__fs){
+//				$filesize = $__fs;
+//			}
+			
+			
+
+            $this->NewObject();
+            $this->Out('<<');
+            $this->Out('/F ('.$this->EscapeString($name).')');
+			if($desc){
+                $this->Out('/Desc '. $this->TextString($desc));
+			}
+            $this->Out('/Type /Filespec');
+            $this->Out('/EF <<');
+            $this->Out('/F '.($this->int_current_object+1).' 0 R');
+            $this->Out('/UF '.($this->int_current_object+1).' 0 R');
+            $this->Out('>>');
+			$this->Out('/AFRelationship /'.$info['other']["relation"]);
+			
+            $this->Out('/UF '.$this->TextString(utf8_encode($name)));
+            $this->Out('>>');
+            $this->Out('endobj');
+
+            $this->NewObject();
+            $this->Out('<<');
+			
+            $this->Out('/Type /EmbeddedFile');
+			$this->Out('/Subtype /' . str_replace("/", "#2f", $info['other']["subtype"]));
+            $this->Out('/Length '.$size);
+			if($this->bol_compress){
+	            $this->Out('/Filter /FlateDecode');
+			}
+			
+            $this->Out("/Params <<");
+            $this->Out("/CheckSum (" . $checksum . ")");
+            $this->Out("/ModDate (D:$md)");
+            $this->Out("/Size ".$filesize."");
+            $this->Out(">>");
+            
+			$this->Out('>>');
+            $this->PutStream($fc);
+            $this->Out('endobj');
+        }
+        $this->NewObject();
+        $this->file_index = $this->int_current_object;
+		
+		
+		$b = [];
+		foreach($this->file_list as $i => $info2)
+            $b[] = $info2['n'].' 0 R';
+//		
+		
+//        $this->Out('<<');
+		$this->Out('['.implode(' ',$b).']');
+        $this->Out('endobj');
     }
 
     /**
@@ -3049,6 +3189,8 @@ class PDF {
     public function PutHeader()
     {
         $this->Out('%PDF-' . $this->str_pdf_version);
+		//This sequence is a kind of “signature” that helps to identify the file as a valid PDF and avoid reading errors.
+		$this->Out("%\xE2\xE3\xCF\xD3");
     }
 
     /**
@@ -3268,5 +3410,54 @@ class PDF {
      */
     public function getPageCount(): int {
         return (int)count($this->arr_pages);
+    }
+	
+	
+	
+	//** ********************************* **
+	//** ****** FPDF -> Attachments ****** **
+	//** ********************************* **
+	function file_Attach($file, $name='', $desc='', $isUTF8=false, $other = []){
+        if($name == ''){
+            $p = strrpos($file,'/');
+            if($p === false){
+                $p = strrpos($file,'\\');
+			}
+			if($p !== false){
+                $name = substr($file, $p+1);
+			}else{
+				$name = $file;
+			}
+        }
+        if(!$isUTF8){
+            $desc = utf8_encode($desc);
+		}
+        $this->file_list[] = ['file' => $file, 'name' => $name, 'desc' => $desc, "content" => false, "other" => $other];
+    }
+	
+	function file_AttachContent($file, $name='', $desc='', $content = '', $isUTF8=false, $other = []){
+        if($name == ''){
+            $p = strrpos($file,'/');
+            if($p === false){
+                $p = strrpos($file,'\\');
+			}
+			if($p !== false){
+                $name = substr($file, $p+1);
+			}else{
+				$name = $file;
+			}
+        }
+        if(!$isUTF8){
+            $desc = utf8_encode($desc);
+            $content = utf8_encode($content);
+		}
+		$tmpfile_path = tempnam(sys_get_temp_dir(), 'CS_FPDF_');
+		file_put_contents($tmpfile_path, $content);
+		
+        $this->file_list[] = ['file' => $tmpfile_path, 'name' => $name, 'desc' => $desc, "content" => false, "other" => $other];
+    }
+	
+	function file_OpenAttachmentPane(bool $bOpen = true){
+        $this->file_open_attachment_pane = $bOpen;
     }
 }
