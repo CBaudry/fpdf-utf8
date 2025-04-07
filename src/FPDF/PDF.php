@@ -1,8 +1,8 @@
 <?php
 
-namespace FaimMedia\FPDF;
+namespace CS\FpdfBundle;
 
-use FaimMedia\FPDF\Exception\FPDFException;
+use CS\FpdfBundle\Exception\FPDFException;
 
 /**
  * Class PDF
@@ -448,7 +448,7 @@ class PDF {
      */
     public function __construct($str_orientation = 'P', $str_units = 'mm', $str_size = 'A4') {
 
-        $this->setFontPath(__DIR__ . '/../font/unifont/');
+        $this->setFontPath(__DIR__ . '/font/unifont/');
 
         // Scale factor
         switch ($str_units) {
@@ -581,7 +581,7 @@ class PDF {
      * @param string $zoomMode Set zoom mode: default, fullpage, fullwidth or real
      * @param string $layoutMode Set layout mode: default, single, continuous or two
      */
-    public function SetDisplayMode(string $zoomMode = null, string $layoutMode = null) {
+    public function SetDisplayMode(?string $zoomMode = null, ?string $layoutMode = null) {
 
     // Validate zoom mode
         $zoomModes = ['default', 'fullpage', 'fullwidth', 'real'];
@@ -625,7 +625,7 @@ class PDF {
      * @param $str_title
      * @param bool $bol_utf8
      */
-    public function SetTitle($str_title, $bol_utf8 = false)
+    public function SetTitle($str_title, $bol_utf8 = true)
     {
         // Title of document
         if ($bol_utf8) {
@@ -638,7 +638,7 @@ class PDF {
      * @param $str_subject
      * @param bool $bol_utf8
      */
-    public function SetSubject($str_subject, $bol_utf8 = false)
+    public function SetSubject($str_subject, $bol_utf8 = true)
     {
         // Subject of document
         if ($bol_utf8) {
@@ -651,7 +651,7 @@ class PDF {
      * @param $str_author
      * @param bool $bol_utf8
      */
-    public function SetAuthor($str_author, $bol_utf8 = false)
+    public function SetAuthor($str_author, $bol_utf8 = true)
     {
         // Author of document
         if ($bol_utf8) {
@@ -664,7 +664,7 @@ class PDF {
      * @param $str_keywords
      * @param bool $bol_utf8
      */
-    public function SetKeywords($str_keywords, $bol_utf8 = false)
+    public function SetKeywords($str_keywords, $bol_utf8 = true)
     {
         // Keywords of document
         if ($bol_utf8) {
@@ -677,7 +677,7 @@ class PDF {
      * @param $str_creator
      * @param bool $bol_utf8
      */
-    public function SetCreator($str_creator, $bol_utf8 = false)
+    public function SetCreator($str_creator, $bol_utf8 = true)
     {
         // Creator of document
         if ($bol_utf8) {
@@ -717,9 +717,9 @@ class PDF {
             $this->AddPage();
         }
         // Page footer
-        $this->bol_in_footer = true;
-        $this->Footer();
-        $this->bol_in_footer = false;
+//        $this->bol_in_footer = true;
+//        $this->Footer();
+//        $this->bol_in_footer = false;
         // Close page
         $this->EndPage();
         // Close document
@@ -746,9 +746,9 @@ class PDF {
         $bol_fill_text_differ = $this->bol_fill_text_differ;
         if ($this->int_page > 0) {
             // Page footer
-            $this->bol_in_footer = true;
-            $this->Footer();
-            $this->bol_in_footer = false;
+            // $this->bol_in_footer = true;
+            // $this->Footer();
+            // $this->bol_in_footer = false;
             // Close page
             $this->EndPage();
         }
@@ -775,9 +775,9 @@ class PDF {
         $this->str_text_color = $str_text_color;
         $this->bol_fill_text_differ = $bol_fill_text_differ;
         // Page header
-        $this->bol_in_header = true;
-        $this->Header();
-        $this->bol_in_header = false;
+        // $this->bol_in_header = true;
+        // $this->Header();
+        // $this->bol_in_header = false;
         // Restore line width
         if ($this->flt_line_width != $flt_line_width) {
             $this->flt_line_width = $flt_line_width;
@@ -803,7 +803,7 @@ class PDF {
     /**
      *
      */
-    public function Header()
+    public function Header($o = [])
     {
         // To be implemented in your own inherited class
     }
@@ -811,7 +811,7 @@ class PDF {
     /**
      *
      */
-    public function Footer()
+    public function Footer($o = [])
     {
         // To be implemented in your own inherited class
     }
@@ -1876,19 +1876,59 @@ class PDF {
         $this->SetY($y);
         $this->SetX($x);
     }
-
-    /**
-     * @return string
-     */
-    public function output()
-    {
-        // Output PDF to some destination
-        if ($this->int_state < self::DOCUMENT_STATE_TERMINATED) {
-            $this->Close();
-        }
-
-        return $this->str_buffer;
-    }
+	
+	function Output($name="", $_dest="S")
+	{
+		// Output PDF to some destination
+		if ($this->int_state < self::DOCUMENT_STATE_TERMINATED) {
+			$this->Close();
+		}
+		
+		$dest = strtoupper($_dest);
+		if($name==""){
+			$name = "doc.pdf";
+		}
+		
+		switch($dest)
+		{
+			case 'I':
+				// Send to standard output
+				$this->checkoutput();
+				if(PHP_SAPI!='cli')
+				{
+					// We send to a browser
+					header('Content-Type: application/pdf');
+					header('Content-Disposition: inline; filename="'.$name.'"');
+					header('Cache-Control: private, max-age=0, must-revalidate');
+					header('Pragma: public');
+				}
+				echo $this->str_buffer;
+				break;
+			case 'D':
+				// Download file
+				$this->checkoutput();
+				header('Content-Type: application/x-download');
+				header('Content-Disposition: attachment; filename="'.$name.'"');
+				header('Cache-Control: private, max-age=0, must-revalidate');
+				header('Pragma: public');
+				echo $this->str_buffer;
+				break;
+			case 'F':
+				// Save to local file
+				$f = fopen($name,'wb');
+				if(!$f)
+					$this->Error('Unable to create output file: '.$name);
+				fwrite($f,$this->str_buffer,strlen($this->str_buffer));
+				fclose($f);
+				break;
+			case 'S':
+				// Return as a string
+				return $this->str_buffer;
+			default:
+				$this->Error('Incorrect output destination: '.$dest);
+		}
+		return '';
+	}
 
     /**
      * Set the font directory where font should be loaded front
@@ -1897,11 +1937,13 @@ class PDF {
      */
 
     public function setFontPath(string $fontPath): string {
-        if(!file_exists($fontPath) || !is_dir($fontPath)) {
-            throw new FPDFException('Font path does not exist `'.$fontPath.'`', FPDFException::INVALID_FONT_PATH);
+		$str_font_path = realpath($fontPath).'/';
+        if(!file_exists($str_font_path) || !is_dir($str_font_path)) {
+            throw new FPDFException('Font path does not exist `'.$str_font_path.'`', FPDFException::INVALID_FONT_PATH);
         }
 
-        $this->str_font_path = realpath($fontPath).'/';
+//        $this->str_font_path = realpath($fontPath).'/';
+        $this->str_font_path = $str_font_path;
 
         return $this->str_font_path;
     }
@@ -2051,12 +2093,16 @@ class PDF {
 
     /**
      * @param $str_text
+     * @param bool $bol_set_byte_order_mark
      * @return string
      */
-    private function UTF8toUTF16($str_text)
+    protected function UTF8toUTF16($str_text, $bol_set_byte_order_mark = true)
     {
         // Convert UTF-8 to UTF-16BE with BOM
         $str_res = "\xFE\xFF";
+		if(!$bol_set_byte_order_mark){
+			$str_res = "";
+		}
         $int_length = strlen($str_text);
         $i = 0;
         while ($i < $int_length) {
@@ -2080,11 +2126,12 @@ class PDF {
         return $str_res;
     }
 
-    private function DoUnderline($flt_x, $flt_y, $str_text)
+    protected function DoUnderline($flt_x, $flt_y, $str_text)
     {
         // Underline text
-        $flt_underline_position = $this->arr_current_font_info['up'];
-        $flt_underline_thickness = $this->arr_current_font_info['ut'];
+//		flt_underline_pos"]=> int(-113) ["flt_underline_thickness
+        $flt_underline_position = ($this->arr_current_font_info['up']??($this->arr_current_font_info['flt_underline_pos']??0));
+        $flt_underline_thickness = ($this->arr_current_font_info['ut']??($this->arr_current_font_info['flt_underline_thickness']??0));
         $flt_width = $this->GetStringWidth($str_text) + $this->int_word_spacing * substr_count($str_text, ' ');
         return sprintf('%.2F %.2F %.2F %.2F re f', $flt_x * $this->flt_scale_factor,
             ($this->flt_current_height - ($flt_y - $flt_underline_position / 1000 * $this->int_font_size_user)) * $this->flt_scale_factor,
@@ -2876,6 +2923,7 @@ class PDF {
         if (isset($arr_info['smask'])) {
             $this->Out('/SMask ' . ($this->int_current_object + 1) . ' 0 R');
         }
+        if(!array_key_exists("data",$arr_info)){$arr_info['data'] = '';}
         $this->Out('/Length ' . strlen($arr_info['data']) . '>>');
         $this->PutStream($arr_info['data']);
         $this->Out('endobj');
@@ -3077,6 +3125,10 @@ class PDF {
      */
     public function UTF8StringToArray($str_input)
     {
+		//Force cast as string, can sometimes crash with some PHP version
+		if(is_numeric($str_input)){
+			$str_input = (string)$str_input;
+		}
         $arr_output = array();
         $int_string_length = strlen($str_input);
         for ($i = 0; $i < $int_string_length; $i++) {
@@ -3110,7 +3162,7 @@ class PDF {
      *
      * @return string The newly set cache folder
      */
-    public function setCachePath(string $cachePath = null): ?string {
+    public function setCachePath(?string $cachePath = null) {
         if(!file_exists($cachePath)) {
             @mkdir($cachePath, 0775, true);
         }
@@ -3129,7 +3181,7 @@ class PDF {
      *
      * @return string The cache folder, may be null
      */
-    public function getCachePath(): ?string {
+    public function getCachePath() {
        return $this->cachePath;
     }
 

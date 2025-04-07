@@ -1,6 +1,6 @@
 <?php
 
-namespace FaimMedia\FPDF;
+namespace CS\FpdfBundle;
 
 class TTFontFile
 {
@@ -17,6 +17,9 @@ class TTFontFile
    // when read by Adobe Reader on a Windows PC(!)
    private $ttf_mac_header = false;
 
+   private $maxUniChar;
+   private $glyphdata;
+   
    private $maxUni;
    private $_pos;
    private $numTables;
