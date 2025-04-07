@@ -10,25 +10,25 @@ You can install this library by editing (or creating) your `composer.json`:
 
 	{
 		"require": {
-			"faimmedia/fpdf-utf8": "*"
+			"cbaudry/fpdf-utf8": "*"
 		}
 	}
 
 And run `composer update` or `composer install`.
 
-Or you can simply run the `composer` command, `composer require faimmedia/fpdf-utf8`.
+Or you can simply run the `composer` command, `composer require cbaudry/fpdf-utf8`.
 
 ## Usage
 
 ### Namespacing
 
-The namespacing has been changed to `FaimMedia\FPDF`.
+The namespacing has been changed to `CS\FPDF`.
 
 ### Caching
 
 In this version you can set the cache folder yourself, so it will not put the cache files into the same directory as the font-files. Please note that if you do not set the cache folder, no caching is used and documents may be created a little bit slower.
 
-	use FaimMedia\FPDF\PDF;
+	use CS\FPDF\PDF;
 
 	$fpdf = new PDF();
 	$fpdf->setFontPath('/font/unifont/');
@@ -48,7 +48,7 @@ A custom exception class `FPDFException` has been created. For all exception err
 ### What is FPDF-UTF8?
 
 FPDF-UTF8 is a version of FPDF, which supports UTF-8 and font-subsetting.  
-This is a updated version (fork) of [tFPDF](https://github.com/DocnetUK/tFPDF).
+This is a updated version (fork) of [FaimMedia's version](https://github.com/FaimMedia/fpdf-utf8), which is an updated version (fork) of [tFPDF](https://github.com/DocnetUK/tFPDF).
 
 ### What is FPDF?
 
@@ -66,7 +66,7 @@ FPDF has other advantages: high level functions. Here is a list of its main feat
 * TrueType, Type1 and encoding support
 * Page compression
 
-FPDF requires no extension (except zlib to activate compression and GD for GIF support). It works with PHP 4 and PHP 5 (the latest version requires at least PHP 4.3.10).
+FPDF requires no extension (except zlib to activate compression and GD for GIF support). It works with PHP 8.
 
 The tutorials will give you a quick start. The complete online documentation is here and download area is there. It is strongly advised to read the FAQ which lists the most common questions and issues.
 
