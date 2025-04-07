@@ -84,3 +84,11 @@ Of course, the generation speed of the document is less than with PDFlib. Howeve
 ## Source attribution
 
 The Code 128 and Code 39 barcode library code was taken directly from the FPDF website, where source attribution is vague at best, but mostly non-existent. If you need source attribution applying for your code included here, please raise an issue.
+
+Based on [FPDF's Website](http://fpdf.org/) :
+
+* Code 128 has been shared by Roland Gautier (dir@persolaser.com)
+* Code 39 has been shared by Emmanuel Havet (ehavet@yahoo.fr)
+* Code EAN-13 has been shared by Olivier (oliver@fpdf.org)
+* The base of this library has been release by Ian Back (ian@bpm1.com) under the LGPL licence
+
