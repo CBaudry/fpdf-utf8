@@ -1,8 +1,8 @@
 <?php
 
-namespace FaimMedia\FPDF\Exception;
+namespace CS\FpdfBundle\Exception;
 
-use Exception;
+use \Exception;
 
 class FPDFException extends Exception {
 
