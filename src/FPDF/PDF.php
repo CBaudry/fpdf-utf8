@@ -29,7 +29,7 @@ class PDF {
      *
      * @var string
      */
-    protected $version = '1.0';
+    protected $version = '3.0';
 
     /**
      * PDS's unique ID
