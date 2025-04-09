@@ -930,11 +930,11 @@ class PDF {
     }
 
     /**
-     * @param $int_red
-     * @param null $int_green
-     * @param null $int_blue
+     * @param int $int_red
+     * @param ?int $int_green
+     * @param ?int $int_blue
      */
-    public function SetDrawColor($int_red, $int_green = null, $int_blue = null)
+    public function SetDrawColor(int $int_red, ?int $int_green = null, ?int $int_blue = null)
     {
         // Set color for all stroking operations
         if (($int_red == 0 && $int_green == 0 && $int_blue == 0) || $int_green === null) {
