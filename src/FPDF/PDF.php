@@ -928,6 +928,27 @@ class PDF {
         // Get current page number
         return $this->int_page;
     }
+	
+	/**
+	 * @param array $args
+     * @return string
+     */
+	protected function getColourString($args)
+    {
+        if (count($args) && is_array($args[0])) {
+            $args = $args[0];
+        }
+        switch (count($args)) {
+            case 1:
+                return sprintf('%.3f g', $args[0] / 255);
+            case 3:
+                return sprintf('%.3f %.3f %.3f rg', $args[0] / 255, $args[1] / 255, $args[2] / 255);
+            case 4:
+                return sprintf('%.3f %.3f %.3f %.3f k', $args[0] / 100, $args[1] / 100, $args[2] / 100, $args[3] / 100);
+            default:
+                return '0 g';
+        }
+    }
 
     /**
 	 * Support for use CMYK colors
@@ -946,22 +967,12 @@ class PDF {
     public function SetDrawColor()
     {
         $args = func_get_args();
-		if (count($args) and is_array($args[0])) {
-			$args = $args[0];
+		// Setting draw colour (unlike any other colours) requires it to be uppercase
+        $str_draw_color = strtoupper($this->getColourString($args));
+		if($str_draw_color === $this->str_draw_color){
+			return;
 		}
-		switch (count($args)) {
-			case 1:
-                $this->str_draw_color = sprintf('%.3f G', $args[0] / 100);
-                break;
-            case 3:
-                $this->str_draw_color = sprintf('%.3f %.3f %.3f RG', $args[0] / 255, $args[1] / 255, $args[2] / 255);
-                break;
-            case 4:
-                $this->str_draw_color = sprintf('%.3f %.3f %.3f %.3f K', $args[0] / 100, $args[1] / 100, $args[2] / 100, $args[3] / 100);
-                break;
-            default:
-                $this->str_draw_color = '0 G';
-		}
+        $this->str_draw_color = $str_draw_color;
         if ($this->int_page > 0) {
             $this->Out($this->str_draw_color);
         }
@@ -984,22 +995,11 @@ class PDF {
     public function SetFillColor()
     {
         $args = func_get_args();
-		if (count($args) and is_array($args[0])) {
-			$args = $args[0];
+		$str_fill_color = $this->getColourString($args);
+		if($str_fill_color === $this->str_fill_color){
+			return;
 		}
-		switch (count($args)) {
-			case 1:
-                $this->str_fill_color = sprintf('%.3f g', $args[0] / 100);
-                break;
-            case 3:
-                $this->str_fill_color = sprintf('%.3f %.3f %.3f rg', $args[0] / 255, $args[1] / 255, $args[2] / 255);
-                break;
-            case 4:
-                $this->str_fill_color = sprintf('%.3f %.3f %.3f %.3f k', $args[0] / 100, $args[1] / 100, $args[2] / 100, $args[3] / 100);
-                break;
-            default:
-                $this->str_fill_color = '0 g';
-		}
+		$this->str_fill_color = $str_fill_color;
         $this->bol_fill_text_differ = ($this->str_fill_color != $this->str_text_color);
         if ($this->int_page > 0) {
             $this->Out($this->str_fill_color);
@@ -1023,22 +1023,11 @@ class PDF {
     public function SetTextColor()
     {
         $args = func_get_args();
-		if (count($args) and is_array($args[0])) {
-			$args = $args[0];
+		$str_text_color = $this->getColourString($args);
+		if($str_text_color === $this->str_text_color){
+			return;
 		}
-		switch (count($args)) {
-			case 1:
-                $this->str_text_color = sprintf('%.3f g', $args[0] / 100);
-                break;
-            case 3:
-                $this->str_text_color = sprintf('%.3f %.3f %.3f rg', $args[0] / 255, $args[1] / 255, $args[2] / 255);
-                break;
-            case 4:
-                $this->str_text_color = sprintf('%.3f %.3f %.3f %.3f k', $args[0] / 100, $args[1] / 100, $args[2] / 100, $args[3] / 100);
-                break;
-            default:
-                $this->str_text_color = '0 g';
-		}
+		$this->str_text_color = $str_text_color;
         $this->bol_fill_text_differ = ($this->str_fill_color != $this->str_text_color);
     }
 
