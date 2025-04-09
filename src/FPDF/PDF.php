@@ -930,36 +930,76 @@ class PDF {
     }
 
     /**
-     * @param int $int_red
+	 * Support for use CMYK colors
+	 * If you pass no parameter, you get black.
+	 * If you pass 1 parameter, it is a grayscale component (between 0 and 100).
+	 * If you pass 3 parameters, they are RGB components (between 0 and 255).
+	 * If you pass 4 parameters, they are CMYK components (between 0 and 100).
+	 * Can you pass the color values as an array:
+	 * $rgb_color = [$red, $green, $blue];
+	 * $cmyk_color = [$cyan, $magenta, $yellow, $key]; // In CMYK the black color is called Key.
+	 * 
+     * @param ?int $int_red
      * @param ?int $int_green
      * @param ?int $int_blue
      */
-    public function SetDrawColor(int $int_red, ?int $int_green = null, ?int $int_blue = null)
+    public function SetDrawColor()
     {
-        // Set color for all stroking operations
-        if (($int_red == 0 && $int_green == 0 && $int_blue == 0) || $int_green === null) {
-            $this->str_draw_color = sprintf('%.3F G', $int_red / 255);
-        } else {
-            $this->str_draw_color = sprintf('%.3F %.3F %.3F RG', $int_red / 255, $int_green / 255, $int_blue / 255);
-        }
+        $args = func_get_args();
+		if (count($args) and is_array($args[0])) {
+			$args = $args[0];
+		}
+		switch (count($args)) {
+			case 1:
+                $this->str_draw_color = sprintf('%.3f G', $args[0] / 100);
+                break;
+            case 3:
+                $this->str_draw_color = sprintf('%.3f %.3f %.3f RG', $args[0] / 255, $args[1] / 255, $args[2] / 255);
+                break;
+            case 4:
+                $this->str_draw_color = sprintf('%.3f %.3f %.3f %.3f K', $args[0] / 100, $args[1] / 100, $args[2] / 100, $args[3] / 100);
+                break;
+            default:
+                $this->str_draw_color = '0 G';
+		}
         if ($this->int_page > 0) {
             $this->Out($this->str_draw_color);
         }
     }
 
     /**
-     * @param $int_red
-     * @param null $int_green
-     * @param null $int_blue
+	 * Support for use CMYK colors
+	 * If you pass no parameter, you get black.
+	 * If you pass 1 parameter, it is a grayscale component (between 0 and 100).
+	 * If you pass 3 parameters, they are RGB components (between 0 and 255).
+	 * If you pass 4 parameters, they are CMYK components (between 0 and 100).
+	 * Can you pass the color values as an array:
+	 * $rgb_color = [$red, $green, $blue];
+	 * $cmyk_color = [$cyan, $magenta, $yellow, $key]; // In CMYK the black color is called Key.
+	 * 
+     * @param ?int $int_red
+     * @param ?int $int_green
+     * @param ?int $int_blue
      */
-    public function SetFillColor($int_red, $int_green = null, $int_blue = null)
+    public function SetFillColor()
     {
-        // Set color for all filling operations
-        if (($int_red == 0 && $int_green == 0 && $int_blue == 0) || $int_green === null) {
-            $this->str_fill_color = sprintf('%.3F g', $int_red / 255);
-        } else {
-            $this->str_fill_color = sprintf('%.3F %.3F %.3F rg', $int_red / 255, $int_green / 255, $int_blue / 255);
-        }
+        $args = func_get_args();
+		if (count($args) and is_array($args[0])) {
+			$args = $args[0];
+		}
+		switch (count($args)) {
+			case 1:
+                $this->str_fill_color = sprintf('%.3f g', $args[0] / 100);
+                break;
+            case 3:
+                $this->str_fill_color = sprintf('%.3f %.3f %.3f rg', $args[0] / 255, $args[1] / 255, $args[2] / 255);
+                break;
+            case 4:
+                $this->str_fill_color = sprintf('%.3f %.3f %.3f %.3f k', $args[0] / 100, $args[1] / 100, $args[2] / 100, $args[3] / 100);
+                break;
+            default:
+                $this->str_fill_color = '0 g';
+		}
         $this->bol_fill_text_differ = ($this->str_fill_color != $this->str_text_color);
         if ($this->int_page > 0) {
             $this->Out($this->str_fill_color);
@@ -967,18 +1007,38 @@ class PDF {
     }
 
     /**
-     * @param $int_red
-     * @param null $int_green
-     * @param null $int_blue
+	 * Support for use CMYK colors
+	 * If you pass no parameter, you get black.
+	 * If you pass 1 parameter, it is a grayscale component (between 0 and 100).
+	 * If you pass 3 parameters, they are RGB components (between 0 and 255).
+	 * If you pass 4 parameters, they are CMYK components (between 0 and 100).
+	 * Can you pass the color values as an array:
+	 * $rgb_color = [$red, $green, $blue];
+	 * $cmyk_color = [$cyan, $magenta, $yellow, $key]; // In CMYK the black color is called Key.
+	 * 
+     * @param ?int $int_red
+     * @param ?int $int_green
+     * @param ?int $int_blue
      */
-    public function SetTextColor($int_red, $int_green = null, $int_blue = null)
+    public function SetTextColor()
     {
-        // Set color for text
-        if (($int_red == 0 && $int_green == 0 && $int_blue == 0) || $int_green === null) {
-            $this->str_text_color = sprintf('%.3F g', $int_red / 255);
-        } else {
-            $this->str_text_color = sprintf('%.3F %.3F %.3F rg', $int_red / 255, $int_green / 255, $int_blue / 255);
-        }
+        $args = func_get_args();
+		if (count($args) and is_array($args[0])) {
+			$args = $args[0];
+		}
+		switch (count($args)) {
+			case 1:
+                $this->str_text_color = sprintf('%.3f g', $args[0] / 100);
+                break;
+            case 3:
+                $this->str_text_color = sprintf('%.3f %.3f %.3f rg', $args[0] / 255, $args[1] / 255, $args[2] / 255);
+                break;
+            case 4:
+                $this->str_text_color = sprintf('%.3f %.3f %.3f %.3f k', $args[0] / 100, $args[1] / 100, $args[2] / 100, $args[3] / 100);
+                break;
+            default:
+                $this->str_text_color = '0 g';
+		}
         $this->bol_fill_text_differ = ($this->str_fill_color != $this->str_text_color);
     }
 
