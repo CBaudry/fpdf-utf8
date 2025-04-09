@@ -2,7 +2,7 @@
 
 use PHPUnit\Framework\TestCase;
 
-define('FPDF_FONT_WRITE_PATH', __DIR__ . '/../build/');
+define('FPDF_FONT_WRITE_PATH', __DIR__ . '/../src/FPDF/font/');
 
 class PDFGeneratedTest extends TestCase
 {
@@ -39,7 +39,9 @@ class PDFGeneratedTest extends TestCase
 
         $file_name = __DIR__ . '/test_data/output.pdf';
 
-        unlink($file_name);
+        if (file_exists($file_name)) {
+            unlink($file_name);
+        }
         file_put_contents($file_name, $file);
 
         if (!file_exists($file_name)) {
