@@ -2092,7 +2092,6 @@ class PDF {
             throw new FPDFException('Font path does not exist `'.$str_font_path.'`', FPDFException::INVALID_FONT_PATH);
         }
 
-//        $this->str_font_path = realpath($fontPath).'/';
         $this->str_font_path = $str_font_path;
 
         return $this->str_font_path;
@@ -3736,7 +3735,6 @@ class PDF {
             throw new FPDFException('Color profile file does not exist `'.$str_color_profile_path.'`', FPDFException::INVALID_COLOR_PROFILE_PATH);
         }
 
-//        $this->str_font_path = realpath($fontPath).'/';
         $this->str_color_profile_path = $str_color_profile_path;
 
         return $this->str_color_profile_path;
