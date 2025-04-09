@@ -1,11 +1,10 @@
 <?php
 /**
- * TestPDF128
+ * TestPDF13
  *
- * Generates a Code 128 Barcode PDF document
+ * Generates a Code 13 Barcode PDF document
  *
- * @author Tim Peters <info@faimmedia.nl>
- * @copyright FaimMedia B.V. 2017
+ * @author BAUDRY Charly
  */
 
 use CS\FPDF\PDF;
@@ -18,7 +17,7 @@ $fpdf = new PDF();
 $fpdf->setCachePath(ROOT_PATH.'cache/font/');
 $fpdf->setFontPath(ROOT_PATH.'src/font/');
 $fpdf->AddPage();
-$fpdf->EAN128(5, 5, '1234566700345', 50, 50);
+$fpdf->EAN13(5, 5, '9999999000016', 100, 50);
 
 header('Content-Type: application/pdf; charset=UTF-8');
 echo $fpdf->output();

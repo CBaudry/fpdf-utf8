@@ -87,9 +87,9 @@ The Code 128 and Code 39 barcode library code was taken directly from the FPDF w
 
 Based on [FPDF's Website](http://fpdf.org/) :
 
-* Code 128 has been shared by Roland Gautier (dir@persolaser.com)
+* EAN 128 has been shared by Roland Gautier (dir@persolaser.com)
+* EAN 13 has been shared by Olivier (oliver@fpdf.org)
 * Code 39 has been shared by Emmanuel Havet (ehavet@yahoo.fr)
-* Code EAN-13 has been shared by Olivier (oliver@fpdf.org)
 * The base of this library has been release by Ian Back (ian@bpm1.com) under the LGPL licence
 * File Attachment has been shared by Olivier (oliver@fpdf.org) and modified to be directly integrated within FPDF
 

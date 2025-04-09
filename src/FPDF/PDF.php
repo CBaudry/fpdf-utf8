@@ -3,6 +3,7 @@
 namespace CS\FpdfBundle;
 
 use CS\FpdfBundle\Exception\FPDFException;
+use CS\FpdfBundle\PDFBarcode;
 
 /**
  * Class PDF
@@ -528,6 +529,13 @@ class PDF {
 	 * @var bool
 	 */
 	protected bool $b_xmp_out = false;
+	
+	/**
+	 * Instance of the PDFBarcode class, use this to add different kind of codes
+	 * 
+	 * @var PDFBarcode
+	 */
+	public ?PDFBarcode $Barcode;
 
     /**
      * PDF constructor.
@@ -608,7 +616,9 @@ class PDF {
 
     // Used both as metadata and XMP data
 		$this->metadata_list["Producer"] = 'csFPDF ' . $this->version;
-
+		
+		$this->Barcode = new PDFBarcode($this);
+		
     }
 
     /**
@@ -1321,6 +1331,30 @@ class PDF {
         if ($this->int_page > 0) {
             $this->Out(sprintf('BT /F%d %.2F Tf ET', $this->arr_current_font_info['i'], $this->int_current_font_size));
         }
+    }
+
+    /**
+	 * 
+	 * @return int
+	 */
+    public function GetCurrentFontSize() {
+        return $this->int_current_font_size;
+    }
+
+    /**
+	 * 
+	 * @return int
+	 */
+    public function GetUserFontSize() {
+        return $this->int_current_font_size / $this->flt_scale_factor;
+    }
+
+    /**
+	 * 
+	 * @return int
+	 */
+    public function GetScaleFactor() {
+        return $this->flt_scale_factor;
     }
 
     /**

@@ -66,4 +66,10 @@ class FPDFException extends Exception {
 // Output destination type is not valid
 	const OUTPUT_INVALID_DESTINATION = -20;
 
+// Digit check for EAN13 code failed
+	const BARCODE_INCORECT_DIGIT_CHECK = -21;
+
+// Character checks for CODE39 code failed
+	const BARCODE_39_INVALID_VALUE = -22;
+
 }
