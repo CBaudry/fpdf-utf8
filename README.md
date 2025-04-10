@@ -65,6 +65,10 @@ FPDF has other advantages: high level functions. Here is a list of its main feat
 * Links
 * TrueType, Type1 and encoding support
 * Page compression
+* EAN 13, 128 and Code 39 support (without extending the main class)
+* PDF Encryption (without extending the main class) (Work in progress)
+* File Attachment
+* Add [XMP data](https://www.adobe.com/products/xmp.html)
 
 FPDF requires no extension (except zlib to activate compression and GD for GIF support). It works with PHP 8.
 
