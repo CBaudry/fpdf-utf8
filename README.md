@@ -70,7 +70,7 @@ FPDF has other advantages: high level functions. Here is a list of its main feat
 * File Attachment
 * Add [XMP data](https://www.adobe.com/products/xmp.html)
 
-FPDF requires no extension (except zlib to activate compression and GD for GIF support). It works with PHP 8.
+FPDF requires no extension, except zlib (to activate compression and handle png alpha chanel) and GD (for GIF support). It works and will be maintained with PHP 8 and above.
 
 The tutorials will give you a quick start. The complete online documentation is here and download area is there. It is strongly advised to read the FAQ which lists the most common questions and issues.
 
