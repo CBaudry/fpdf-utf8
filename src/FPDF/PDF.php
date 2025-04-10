@@ -1032,7 +1032,7 @@ class PDF {
     }
 
     /**
-     * @param $str_text
+     * @param string $str_text
      * @return float|int
      */
     public function GetStringWidth($str_text)
@@ -1072,7 +1072,7 @@ class PDF {
     }
 
     /**
-     * @param $flt_width
+     * @param float $flt_width
      */
     public function SetLineWidth($flt_width)
     {
@@ -1084,10 +1084,10 @@ class PDF {
     }
 
     /**
-     * @param $flt_x_1
-     * @param $flt_y_1
-     * @param $flt_x_2
-     * @param $flt_y_2
+     * @param float $flt_x_1
+     * @param float $flt_y_1
+     * @param float $flt_x_2
+     * @param float $flt_y_2
      */
     public function Line($flt_x_1, $flt_y_1, $flt_x_2, $flt_y_2)
     {
@@ -1098,10 +1098,10 @@ class PDF {
     }
 
     /**
-     * @param $flt_x
-     * @param $flt_y
-     * @param $flt_width
-     * @param $flt_height
+     * @param float $flt_x
+     * @param float $flt_y
+     * @param float $flt_width
+     * @param float $flt_height
      * @param string $str_style
      */
     public function Rect($flt_x, $flt_y, $flt_width, $flt_height, $str_style = '')
@@ -1435,10 +1435,10 @@ class PDF {
     }
 
     /**
-     * @param $flt_x
-     * @param $flt_y
-     * @param $flt_width
-     * @param $flt_height
+     * @param float $flt_x
+     * @param float $flt_y
+     * @param float $flt_width
+     * @param float $flt_height
      * @param $mix_link_key
      */
     public function Link($flt_x, $flt_y, $flt_width, $flt_height, $mix_link_key)
@@ -1454,9 +1454,9 @@ class PDF {
     }
 
     /**
-     * @param $flt_x
-     * @param $flt_y
-     * @param $str_text
+     * @param float $flt_x
+     * @param float $flt_y
+     * @param string $str_text
      */
     public function Text($flt_x, $flt_y, $str_text)
     {
@@ -1627,9 +1627,9 @@ class PDF {
     }
 
     /**
-     * @param $flt_width
-     * @param $flt_height
-     * @param $str_text
+     * @param float $flt_width
+     * @param float $flt_height
+     * @param string $str_text
      * @param int $int_border
      * @param string $str_alignment
      * @param bool $bol_fill
@@ -2008,7 +2008,7 @@ class PDF {
     }
 
     /**
-     * @param $flt_position_x
+     * @param float $flt_position_x
      */
     public function SetX($flt_position_x)
     {
@@ -2030,7 +2030,7 @@ class PDF {
     }
 
     /**
-     * @param $flt_position_y
+     * @param float $flt_position_y
      */
     public function SetY($flt_position_y)
     {
@@ -2200,7 +2200,7 @@ class PDF {
     }
 
     /**
-     * @param $str_orientation
+     * @param string $str_orientation
      * @param $mix_size
      */
     private function BeginPage($str_orientation, $mix_size)
@@ -2251,7 +2251,7 @@ class PDF {
     }
 
     /**
-     * @param $str_font
+     * @param string $str_font
      * @return array
      */
     private function LoadFont($str_font)
@@ -2266,7 +2266,7 @@ class PDF {
     }
 
     /**
-     * @param $str_text
+     * @param string $str_text
      * @return mixed
      */
     protected function EscapeString($str_text)
@@ -2280,7 +2280,7 @@ class PDF {
     }
 
     /**
-     * @param $s
+     * @param string $s
      * @return string
      */
     protected function TextString($s)
@@ -2290,7 +2290,7 @@ class PDF {
     }
 
     /**
-     * @param $str_text
+     * @param string $str_text
      * @param bool $bol_set_byte_order_mark
      * @return string
      */
@@ -2337,7 +2337,7 @@ class PDF {
     }
 
     /**
-     * @param $str_file
+     * @param string $str_file
      * @return array
      */
     private function _parsejpg($str_file)
@@ -2363,7 +2363,7 @@ class PDF {
     }
 
     /**
-     * @param $str_file
+     * @param string $str_file
      * @return array
      */
     private function _parsepng($str_file)
@@ -2379,7 +2379,7 @@ class PDF {
     }
 
     /**
-     * @param $ptr_file
+     * @param string $ptr_file
      * @param $str_file
      * @return array
      */
@@ -2516,7 +2516,7 @@ class PDF {
 
     /**
      * @param $ptr_file
-     * @param $int_bytes
+     * @param int $int_bytes
      * @return string
      */
     private function _readstream($ptr_file, $int_bytes)
@@ -2549,7 +2549,7 @@ class PDF {
     }
 
     /**
-     * @param $str_file
+     * @param string $str_file
      * @return array
      */
     private function _parsegif($str_file)
@@ -2604,7 +2604,7 @@ class PDF {
     }
 
     /**
-     * @param $str_data
+     * @param string $str_data
      */
     protected function PutStream($str_data)
     {
@@ -2614,7 +2614,7 @@ class PDF {
     }
 
     /**
-     * @param $str_data
+     * @param string $str_data
      */
     protected function Out($str_data)
     {
@@ -3417,8 +3417,6 @@ class PDF {
 		$this->b_xmp_out = true;
 		if($this->str_xmp){
 			
-//			$s = (is_string($this->str_xmp)?$this->str_xmp:$this->str_xmp->saveXML());
-//			$s = str_ireplace('<?xml version="1.0"? >', '', $s);
 			$s = str_ireplace('<?xml version="1.0"?>', '', $this->str_xmp);
 			
 			
@@ -3557,7 +3555,7 @@ class PDF {
     /**
      * Converts UTF-8 strings to UTF16-BE
      *
-     * @param $str_input
+     * @param string $str_input
      * @param bool $bol_set_byte_order_mark
      * @return string
      */
@@ -3574,7 +3572,7 @@ class PDF {
     /**
      * Converts UTF-8 strings to codepoints array
      *
-     * @param $str_input
+     * @param string $str_input
      * @return array
      */
     public function UTF8StringToArray($str_input)
