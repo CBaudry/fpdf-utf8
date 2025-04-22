@@ -4,6 +4,7 @@ namespace CS\FpdfBundle;
 
 use CS\FpdfBundle\Exception\FPDFException;
 use CS\FpdfBundle\PDFBarcode;
+use CS\FpdfBundle\PDFProtection;
 
 /**
  * Class PDF
@@ -536,6 +537,13 @@ class PDF {
 	 * @var PDFBarcode
 	 */
 	public ?PDFBarcode $Barcode;
+	
+	/**
+	 * Instance of the PDFProtection class, use this to add different kind of codes
+	 * 
+	 * @var PDFProtection
+	 */
+	public ?PDFProtection $Protection;
 
     /**
      * PDF constructor.
@@ -618,6 +626,7 @@ class PDF {
 		$this->metadata_list["Producer"] = 'csFPDF ' . $this->version;
 		
 		$this->Barcode = new PDFBarcode($this);
+		$this->Protection = new PDFProtection($this);
 		
     }
 
@@ -2285,6 +2294,9 @@ class PDF {
      */
     protected function TextString($s)
     {
+		if($this->Protection->isEncrypted()){
+			$s = $this->Protection::RC4($this->Protection->ObjectKey($this->int_current_object), $s);
+		}
         // Format a text string
         return '(' . $this->EscapeString($s) . ')';
     }
@@ -2608,6 +2620,10 @@ class PDF {
      */
     protected function PutStream($str_data)
     {
+		if($this->Protection->isEncrypted()){
+			$str_data = $this->Protection::RC4($this->Protection->ObjectKey($this->int_current_object), $str_data);
+		}
+		
         $this->Out('stream');
         $this->Out($str_data);
         $this->Out('endstream');
@@ -3198,6 +3214,24 @@ class PDF {
 			$this->PutColorProfile();
 		}
         $this->PutXMP();
+		
+		
+		if($this->Protection->isEncrypted()){
+			
+			$this->NewObject();
+			$this->Protection->int_encryption_object_id = $this->int_current_object;
+			$this->Out('<<');
+//			$this->Protection->PutEncryption();
+			$this->Out('/Filter /Standard');
+			$this->Out('/V 1');
+			$this->Out('/R 2');
+
+			$this->Out('/O ('.$this->EscapeString($this->Protection->str_o_value).')');
+			$this->Out('/U ('.$this->EscapeString($this->Protection->str_u_value).')');
+			$this->Out('/P '.$this->Protection->int_p_value);
+			$this->Out('>>');
+			$this->Out('endobj');
+		}
     }
 
     /**
@@ -3509,6 +3543,14 @@ class PDF {
         $this->Out('/Root ' . $this->int_current_object . ' 0 R');
         $this->Out('/Info ' . ($this->int_current_object - 1) . ' 0 R');
         $this->Out('/ID [(' . $this->str_id . ')(' . $this->str_id . ')]');
+		
+		
+		if($this->Protection->isEncrypted()){
+			
+			$this->Out('/Encrypt ' . $this->Protection->int_encryption_object_id . ' 0 R');
+			$this->Out('/ID [()()]');
+		}
+		
     }
 
     /**

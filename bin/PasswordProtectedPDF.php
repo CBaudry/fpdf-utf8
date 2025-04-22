@@ -8,8 +8,7 @@
  * @copyright FaimMedia B.V. 2018
  */
 
-use CS\FPDF\PDF,
-    CS\FPDF\ProtectedPDF;
+use CS\FPDF\PDF,;
 
 define('ROOT_PATH', realpath(__DIR__.'/..').'/');
 
@@ -18,7 +17,7 @@ require_once ROOT_PATH.'/vendor/autoload.php';
 $password = '123';
 
 $fpdf = new ProtectedPDF();
-$fpdf->setProtection([], $password);
+$fpdf->Protection->setProtection(user_password: $password);
 
 $fpdf->AddFont('helvetica', '', '../helvetica.php');
 $fpdf->SetFont('helvetica');
