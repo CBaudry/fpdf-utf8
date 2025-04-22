@@ -2606,6 +2606,51 @@ class PDF {
     }
 
     /**
+     * @param string $str_file
+     * @return array
+     */
+    private function _parsewebp($str_file)
+    {
+        // Extract info from a GIF file (via PNG conversion)
+        if (!function_exists('imagepng')) {
+            throw new FPDFException('GD extension is required for GIF support', FPDFException::EXTENSION_NOT_AVAILABLE);
+        }
+        if (!function_exists('imagecreatefromwebp')) {
+            throw new FPDFException('GD has no GIF read support', FPDFException::EXTENSION_NOT_AVAILABLE);
+        }
+        $obj_image = imagecreatefromwebp($str_file);
+        if (!$obj_image) {
+            throw new FPDFException('Missing or incorrect image file: ' . $str_file, FPDFException::INVALID_IMAGE);
+        }
+        imageinterlace($obj_image, 0);
+        $ptr_file = @fopen('php://temp', 'rb+');
+        if ($ptr_file) {
+            // Perform conversion in memory
+            ob_start();
+            imagepng($obj_image);
+            $str_data = ob_get_clean();
+            imagedestroy($obj_image);
+            fwrite($ptr_file, $str_data);
+            rewind($ptr_file);
+            $arr_info = $this->_parsepngstream($ptr_file, $str_file);
+            fclose($ptr_file);
+        } else {
+            // Use temporary file
+            $str_tmp = tempnam('.', 'webp');
+            if (!$str_tmp) {
+                throw new FPDFException('Unable to create a temporary file', FPDFException::IMAGE_NOT_WRITABLE);
+            }
+            if (!imagepng($obj_image, $str_tmp)) {
+                throw new FPDFException('Error while saving to temporary file', FPDFException::IMAGE_NOT_WRITABLE);
+            }
+            imagedestroy($obj_image);
+            $arr_info = $this->_parsepng($str_tmp);
+            unlink($str_tmp);
+        }
+        return $arr_info;
+    }
+
+    /**
      * Creates a new object
      */
     protected function NewObject()
