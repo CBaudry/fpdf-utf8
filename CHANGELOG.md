@@ -3,6 +3,22 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [v3.0.1]
+
+### Fixes
+ - Fixed vendor name
+
+## [v3.0.0]
+
+### Changed
+
+ - Added EAN 13, 128 and Code 39 support directly inside the main class
+ - Added PDF Encryption directly inside the main class
+ - Added file attachement
+ - Added XMP data handling
+ - Added WebP image format handling
+ - Generated PDF are PDF/A compliant
+
 ## [v2.0.7]
 
 ### Fixes
