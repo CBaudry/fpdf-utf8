@@ -8,7 +8,7 @@
  * @copyright FaimMedia B.V. 2017
  */
 
-use CS\FPDF\PDF;
+use cbaudry\FPDF\PDF;
 
 define('ROOT_PATH', realpath(__DIR__.'/..').'/');
 

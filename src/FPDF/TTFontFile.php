@@ -1,6 +1,6 @@
 <?php
 
-namespace CS\FpdfBundle;
+namespace cbaudry\FpdfBundle;
 
 class TTFontFile
 {

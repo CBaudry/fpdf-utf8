@@ -1,6 +1,6 @@
 <?php
 
-namespace FaimMedia\FPDF;
+namespace cbaudry\FPDF;
 
 use Exception;
 

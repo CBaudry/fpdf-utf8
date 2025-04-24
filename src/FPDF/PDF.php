@@ -1,10 +1,10 @@
 <?php
 
-namespace CS\FpdfBundle;
+namespace cbaudry\FpdfBundle;
 
-use CS\FpdfBundle\Exception\FPDFException;
-use CS\FpdfBundle\PDFBarcode;
-use CS\FpdfBundle\PDFProtection;
+use cbaudry\FpdfBundle\Exception\FPDFException;
+use cbaudry\FpdfBundle\PDFBarcode;
+use cbaudry\FpdfBundle\PDFProtection;
 
 /**
  * Class PDF

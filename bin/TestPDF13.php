@@ -7,7 +7,7 @@
  * @author BAUDRY Charly
  */
 
-use CS\FPDF\PDF;
+use cbaudry\FPDF\PDF;
 
 define('ROOT_PATH', realpath(__DIR__.'/..').'/');
 

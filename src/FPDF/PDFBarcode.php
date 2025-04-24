@@ -6,9 +6,9 @@
  * @copyright csFPDF
  */
 
-namespace CS\FpdfBundle;
+namespace cbaudry\FpdfBundle;
 
-use CS\FpdfBundle\Exception\FPDFException;
+use cbaudry\FpdfBundle\Exception\FPDFException;
 
 class PDFBarcode
 {
