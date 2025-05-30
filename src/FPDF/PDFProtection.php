@@ -66,7 +66,7 @@ class PDFProtection
 	 * @param string $user_password       The password for restricted access to the document (obeying $permissions)
 	 * @param string|null $owner_password The password for unrestricted access to the document (ignoring $permissions)
 	 */
-	public function SetProtection(array $permissions = null, $user_password = '', $owner_password = null)
+	public function SetProtection(?array $permissions = null, $user_password = '', $owner_password = null)
 	{
 		$protection = self::PROTECTION_BASE;
 		foreach((array)$permissions as $permission){
