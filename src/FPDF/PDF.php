@@ -2410,9 +2410,14 @@ class PDF {
         $int_width = $this->_readint($ptr_file);
         $int_height = $this->_readint($ptr_file);
         $int_bits_per_component = ord($this->_readstream($ptr_file, 1));
-        if ($int_bits_per_component > 8) {
-            throw new FPDFException('16-bit depth not supported: ' . $str_file, FPDFException::UNSUPPORTED_IMAGE);
+
+        // Accept 8-bit and 16-bit depths; PDF 1.5+ supports 16 bpc natively
+        if ($int_bits_per_component != 8 && $int_bits_per_component != 16) {
+            throw new FPDFException('Unsupported bit depth (' . $int_bits_per_component . ' bpc): ' . $str_file, FPDFException::UNSUPPORTED_IMAGE);
         }
+        // 16-bit images require PDF 1.5+
+        $bool_16bit = ($int_bits_per_component == 16);
+
         $int_color_channels = ord($this->_readstream($ptr_file, 1));
         if ($int_color_channels == 0 || $int_color_channels == 4) {
             $str_color_space = 'DeviceGray';
@@ -2433,7 +2438,10 @@ class PDF {
             throw new FPDFException('Interlacing not supported: ' . $str_file, FPDFException::UNSUPPORTED_IMAGE);
         }
         $this->_readstream($ptr_file, 4);
-        $str_predictor = '/Predictor 15 /Colors ' . ($str_color_space == 'DeviceRGB' ? 3 : 1) . ' /BitsPerComponent ' . $int_bits_per_component . ' /Columns ' . $int_width;
+        $str_predictor = '/Predictor 15'
+          . ' /Colors ' . ($str_color_space == 'DeviceRGB' ? 3 : 1)
+          . ' /BitsPerComponent ' . $int_bits_per_component
+          . ' /Columns ' . $int_width;
 
         // Scan chunks looking for palette, transparency and image data
         $str_palette = '';
@@ -2448,12 +2456,21 @@ class PDF {
                 $this->_readstream($ptr_file, 4);
             } elseif ($str_type == 'tRNS') {
                 // Read transparency info
+                // In 16-bit PNGs the tRNS values are 2-byte big-endian samples;
+                // we keep only the high byte (same visual precision as 8-bit tRNS).
                 $str_transparency = $this->_readstream($ptr_file, $int_line);
                 if ($int_color_channels == 0) {
-                    $arr_transparency_data = array(ord(substr($str_transparency, 1, 1)));
+                    // Grayscale: one 2-byte sample → use high byte
+                    $arr_transparency_data = array(ord(substr($str_transparency, 0, 1)));
                 } elseif ($int_color_channels == 2) {
-                    $arr_transparency_data = array(ord(substr($str_transparency, 1, 1)), ord(substr($str_transparency, 3, 1)), ord(substr($str_transparency, 5, 1)));
+                    // RGB: three 2-byte samples → use high byte of each
+                    $arr_transparency_data = array(
+                        ord(substr($str_transparency, 0, 1)),
+                                                   ord(substr($str_transparency, 2, 1)),
+                                                   ord(substr($str_transparency, 4, 1)),
+                    );
                 } else {
+                    // Indexed: one byte per palette entry, no change for bit depth
                     $int_pos = strpos($str_transparency, chr(0));
                     if ($int_pos !== false) {
                         $arr_transparency_data = array($int_pos);
@@ -2474,54 +2491,109 @@ class PDF {
         if ($str_color_space == 'Indexed' && empty($str_palette)) {
             throw new FPDFException('Missing palette in ' . $str_file, FPDFException::UNSUPPORTED_IMAGE);
         }
+
         $arr_info = array(
-            'w' => $int_width,
-            'h' => $int_height,
-            'cs' => $str_color_space,
+            'w'   => $int_width,
+            'h'   => $int_height,
+            'cs'  => $str_color_space,
             'bpc' => $int_bits_per_component,
-            'f' => 'FlateDecode',
-            'dp' => $str_predictor,
+            'f'   => 'FlateDecode',
+            'dp'  => $str_predictor,
             'pal' => $str_palette,
-            'trns' => $arr_transparency_data
+            'trns' => $arr_transparency_data,
         );
+
         if ($int_color_channels >= 4) {
-            // Extract alpha channel
+            // Extract alpha channel (type 4 = Gray+Alpha, type 6 = RGBA)
             if (!function_exists('gzuncompress')) {
                 throw new FPDFException('Zlib not available, can\'t handle alpha channel: ' . $str_file, FPDFException::EXTENSION_NOT_AVAILABLE);
             }
             $str_data = gzuncompress($str_data);
             $str_color = '';
             $str_alpha = '';
-            if ($int_color_channels == 4) {
-                // Gray image
-                $int_length = 2 * $int_width;
-                for ($i = 0; $i < $int_height; $i++) {
-                    $int_pos = (1 + $int_length) * $i;
-                    $str_color .= $str_data[$int_pos];
-                    $str_alpha .= $str_data[$int_pos];
-                    $str_line = substr($str_data, $int_pos + 1, $int_length);
-                    $str_color .= preg_replace('/(.)./s', '$1', $str_line);
-                    $str_alpha .= preg_replace('/.(.)/s', '$1', $str_line);
+
+            if ($bool_16bit) {
+                // ---------------------------------------------------------------
+                // 16-bit path: each sample is 2 bytes (big-endian).
+                // Row layout after filter byte:
+                //   Gray+Alpha (type 4): [filter][Gy Hi][Gy Lo][A Hi][A Lo] × width
+                //   RGBA       (type 6): [filter][R Hi][R Lo][G Hi][G Lo][B Hi][B Lo][A Hi][A Lo] × width
+                // We split the decompressed, unfiltered stream into two planes
+                // (color and alpha) and re-compress each independently.
+                // ---------------------------------------------------------------
+                if ($int_color_channels == 4) {
+                    // Gray+Alpha 16-bit: 2 bytes color + 2 bytes alpha per pixel
+                    $int_bytes_per_pixel = 4; // 2 color + 2 alpha
+                    $int_row_bytes = $int_bytes_per_pixel * $int_width;
+                    for ($i = 0; $i < $int_height; $i++) {
+                        $int_pos = (1 + $int_row_bytes) * $i;
+                        // Copy filter byte to both planes
+                        $str_color .= $str_data[$int_pos];
+                        $str_alpha  .= $str_data[$int_pos];
+                        $str_line = substr($str_data, $int_pos + 1, $int_row_bytes);
+                        // Interleaved: Gy0_hi Gy0_lo A0_hi A0_lo Gy1_hi Gy1_lo A1_hi A1_lo …
+                        $str_color .= preg_replace('/(..)../s', '$1', $str_line); // keep bytes 0-1, drop 2-3
+                        $str_alpha  .= preg_replace('/../(..)/s', '$1', $str_line); // drop bytes 0-1, keep 2-3
+                    }
+                } else {
+                    // RGBA 16-bit: 6 bytes color + 2 bytes alpha per pixel
+                    $int_bytes_per_pixel = 8; // 6 color + 2 alpha
+                    $int_row_bytes = $int_bytes_per_pixel * $int_width;
+                    for ($i = 0; $i < $int_height; $i++) {
+                        $int_pos = (1 + $int_row_bytes) * $i;
+                        // Copy filter byte to both planes
+                        $str_color .= $str_data[$int_pos];
+                        $str_alpha  .= $str_data[$int_pos];
+                        $str_line = substr($str_data, $int_pos + 1, $int_row_bytes);
+                        // Interleaved: R_hi R_lo G_hi G_lo B_hi B_lo A_hi A_lo per pixel (8 bytes)
+                        $str_color .= preg_replace('/(.{6})../s', '$1', $str_line); // keep 6, drop 2
+                        $str_alpha  .= preg_replace('/.{6}(..)/s', '$1', $str_line); // drop 6, keep 2
+                    }
                 }
             } else {
-                // RGB image
-                $int_length = 4 * $int_width;
-                for ($i = 0; $i < $int_height; $i++) {
-                    $int_pos = (1 + $int_length) * $i;
-                    $str_color .= $str_data[$int_pos];
-                    $str_alpha .= $str_data[$int_pos];
-                    $str_line = substr($str_data, $int_pos + 1, $int_length);
-                    $str_color .= preg_replace('/(.{3})./s', '$1', $str_line);
-                    $str_alpha .= preg_replace('/.{3}(.)/s', '$1', $str_line);
+                // ---------------------------------------------------------------
+                // Original 8-bit path (unchanged)
+                // ---------------------------------------------------------------
+                if ($int_color_channels == 4) {
+                    // Gray+Alpha 8-bit
+                    $int_length = 2 * $int_width;
+                    for ($i = 0; $i < $int_height; $i++) {
+                        $int_pos = (1 + $int_length) * $i;
+                        $str_color .= $str_data[$int_pos];
+                        $str_alpha .= $str_data[$int_pos];
+                        $str_line = substr($str_data, $int_pos + 1, $int_length);
+                        $str_color .= preg_replace('/(.)./s', '$1', $str_line);
+                        $str_alpha .= preg_replace('/.(.)/s', '$1', $str_line);
+                    }
+                } else {
+                    // RGBA 8-bit
+                    $int_length = 4 * $int_width;
+                    for ($i = 0; $i < $int_height; $i++) {
+                        $int_pos = (1 + $int_length) * $i;
+                        $str_color .= $str_data[$int_pos];
+                        $str_alpha .= $str_data[$int_pos];
+                        $str_line = substr($str_data, $int_pos + 1, $int_length);
+                        $str_color .= preg_replace('/(.{3})./s', '$1', $str_line);
+                        $str_alpha .= preg_replace('/.{3}(.)/s', '$1', $str_line);
+                    }
                 }
             }
+
             unset($str_data);
             $str_data = gzcompress($str_color);
             $arr_info['smask'] = gzcompress($str_alpha);
-            if ($this->str_pdf_version < '1.4') {
-                $this->str_pdf_version = '1.4';
-            }
+
         }
+
+        // SMasks with 16-bit alpha require PDF 1.5+
+        if ($bool_16bit) {
+            if ($this->str_pdf_version < '1.5') {
+                $this->str_pdf_version = '1.5';
+            }
+        } else if ($int_color_channels >= 4 && $this->str_pdf_version < '1.4') {
+            $this->str_pdf_version = '1.4';
+        }
+
         $arr_info['data'] = $str_data;
         return $arr_info;
     }
@@ -3188,12 +3260,12 @@ class PDF {
         $this->Out('endobj');
         // Soft mask
         if (isset($arr_info['smask'])) {
-            $str_dp = '/Predictor 15 /Colors 1 /BitsPerComponent 8 /Columns ' . $arr_info['w'];
+            $str_dp = '/Predictor 15 /Colors 1 /BitsPerComponent ' . $arr_info['bpc'] . ' /Columns ' . $arr_info['w'];
             $arr_smask = array(
                 'w' => $arr_info['w'],
                 'h' => $arr_info['h'],
                 'cs' => 'DeviceGray',
-                'bpc' => 8,
+                'bpc' => $arr_info['bpc'],
                 'f' => $arr_info['f'],
                 'dp' => $str_dp,
                 'data' => $arr_info['smask']
