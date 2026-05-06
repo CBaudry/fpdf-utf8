@@ -2412,7 +2412,7 @@ class PDF {
         $int_bits_per_component = ord($this->_readstream($ptr_file, 1));
 
         // Accept 8-bit and 16-bit depths; PDF 1.5+ supports 16 bpc natively
-        if ($int_bits_per_component != 8 && $int_bits_per_component != 16) {
+        if (!in_array($int_bits_per_component, [1, 2, 4, 8, 16])) {
             throw new FPDFException('Unsupported bit depth (' . $int_bits_per_component . ' bpc): ' . $str_file, FPDFException::UNSUPPORTED_IMAGE);
         }
         // 16-bit images require PDF 1.5+
